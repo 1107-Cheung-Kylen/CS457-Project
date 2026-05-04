@@ -6,6 +6,8 @@ from database import Session # avoid rewriting connection code from database.py
 
 from datetime import date
 
+from tabulate import tabulate
+
 # sessionUsers = Session()
 
 Base = declarative_base()
@@ -102,11 +104,12 @@ def view_cities(user):
         # cities = session.execute(select(Cities, Admin_Regions, Countries).join(User_Cities, Cities.id == User_Cities.city_id).join(Admin_Regions, Cities.admin_id == Admin_Regions.admin_id).join(Countries, Cities.country_id == Countries.country_id).where(User_Cities.user_id == user)).all()
 
         cities = session.execute(
-            select(Cities.city_name, Admin_Regions.admin_name, Countries.country_name)
+            select(Cities.city_name, Admin_Regions.admin_name, Countries.country_name, Cities.lat, Cities.lng, Cities.population, User_Cities.date, User_Cities.rating_food, User_Cities.rating_recreation, User_Cities.rating_shopping)
             .join(User_Cities, Cities.id == User_Cities.city_id)
             .join(Admin_Regions, Cities.admin_id == Admin_Regions.admin_id)
             .join(Countries, Cities.country_id == Countries.country_id)
             .where(User_Cities.user_id == user)
+            # maybe need another where clause for admin region?
         ).all()
 
         # cities_id = []
@@ -116,8 +119,14 @@ def view_cities(user):
         
         # print(cities[0].city_id)
 
-    for city in cities:
-        print(f"{city.city_name}, {city.admin_name}, {city.country_name}")
+    view_city_headers = [
+        "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited", "Food", "Recreation", "Shopping",
+    ]
+
+    print(tabulate(cities, headers=view_city_headers, tablefmt="grid"))
+
+    # for city in cities:
+    #     print(f"{city.city_name}, {city.lat}, {city.lng}, {city.admin_name}, {city.country_name}")
 
     # for city_name, region_name, country_name in cities: # cities is a ROW object
     #     print(city_name, region_name, country_name)
