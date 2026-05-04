@@ -19,7 +19,7 @@
 # create delarative table with for user created database?
 # create reflective database for imported table
 
-from users import *
+from model import *
 
 def main():
     print("where have i been? [the app: by kylen cheung]")
@@ -40,11 +40,6 @@ def main():
     # need class to store city objects
     # maybe use array of city objects or something like that
 
-def view_cities(user):
-    print("Viewing Cities")
-    
-    # use SQLalchamey (do NOT load entire database into array)
-
 def add_cities(user):
     print("Adding City")
 
@@ -52,7 +47,6 @@ def add_cities(user):
 
     # query database using SQLalchamey to find match
     # store information matched
-
 
 if __name__=="__main__":
     main()

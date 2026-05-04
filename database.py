@@ -23,30 +23,16 @@ Base = declarative_base()
 #     for row in result:
 #         print(row)
 
-class Cities(Base):
-    __tablename__ = 'cities'
-    __table_args__ = {'schema': 'project'}
-
-    city = Column(String)
-    city_ascii = Column(String)
-    lat = Column(REAL)
-    lng = Column(REAL)
-    country = Column(String)
-    iso2 = Column(String(2))
-    iso3 = Column(String(3))
-    admin_name = Column(String)
-    capital = Column(String)
-    population = Column(Integer)
-    id = Column(Integer, primary_key=True)
 
 
-with Session() as session:
-    # examples of using sqlalchemy to query database
 
-    # filter by city name, and return cities called "New York"
-    result = session.query(Cities).filter(Cities.city == "New York")
+# with Session() as session:
+#     # examples of using sqlalchemy to query database
 
-    for row in result:
-        print(row.lng)
+#     # filter by city name, and return cities called "New York"
+#     result = session.query(Cities).filter(Cities.city == "New York")
 
-session.close()
+#     for row in result:
+#         print(row.lng)
+
+# session.close()
