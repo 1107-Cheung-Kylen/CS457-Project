@@ -71,6 +71,8 @@ new_user_city = User_Cities(user_id = 1, city_id = 1392685764, date = test_date,
 #     session.commit()
 
 def select_user():
+    print("Select a user (or create one!)")
+
     # access database and list all
     with Session() as session:
         # statement = select(Users.name)
@@ -93,7 +95,7 @@ def select_user():
     input_choice = float('inf') # set input_choice to be +infinity
     # use while loop to make sure valid user is picked
     while input_choice < 1 or input_choice > users_num + 3:
-        input_choice = int(input("pick a user: "))
+        input_choice = int(input("Pick an option: "))
         # if(input_choice == (index + 2)):
         #     add_user()
         #     return
@@ -105,17 +107,19 @@ def select_user():
         # input_choice = float('-inf')
         add_user()
         select_user()
+        return
         # print("Add USER")
     elif input_choice == (users_num + 2):
         remove_user()
         select_user()
+        return
     elif input_choice == (users_num + 3):
         sys.exit()
 
     input_name, input_email, input_id = users_tuple[input_choice - 1] # subtract 1 since array starts at 0
 
     # users_id = session.scalars(select(Users.id).where(Users.name == input_name) & (Users.email == input_email)).all()
-    print(f"Selected {input_name}")
+    print(f"{input_name}'s City Tracker")
     
     return input_id
 
@@ -138,7 +142,7 @@ def remove_user():
 
     for index, (name, email, id) in enumerate(users_tuple):
         print(f"{index + 1}: {name}, {email}") # use f-string
-    print(f"{users_num + 1}: Exit")
+    print(f"{users_num + 1}: Exit Program")
 
     # input_choice = int(input("Pick a user to remove: "))
 
@@ -165,6 +169,33 @@ def remove_user():
             for city_delete in cities_delete:
                 session.delete(city_delete)
             session.commit()
+
+def remove_cities(user):
+    with Session() as session:
+        cities = session.execute(
+            select(Cities.city_name, Admin_Regions.admin_name, Countries.country_name, Cities.lat, Cities.lng, Cities.population, User_Cities.date, User_Cities.rating_food, User_Cities.rating_recreation, User_Cities.rating_shopping, User_Cities.id)
+            .join(User_Cities, Cities.id == User_Cities.city_id)
+            .join(Admin_Regions, Cities.admin_id == Admin_Regions.admin_id)
+            .join(Countries, Cities.country_id == Countries.country_id)
+            .where(User_Cities.user_id == user)
+            # maybe need another where clause for admin region?
+        ).all()
+
+    view_city_headers = [
+        "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited", "Food", "Recreation", "Shopping",
+    ]
+
+    print(tabulate(cities, headers=view_city_headers, tablefmt="grid", showindex=range(1, len(cities) + 1)))
+
+    user_choice = int(input("Enter the number of the city to remove: "))
+    city = cities[user_choice - 1]
+
+    with Session() as session:
+        city_delete = session.execute(select(User_Cities).where(User_Cities.id == city.id)).scalar()
+
+    if city_delete:
+        session.delete(city_delete)
+        session.commit()
 
 
 def view_cities(user):
@@ -231,11 +262,11 @@ def add_cities(user):
     user_food = 6
     user_shopping = 6
     user_recreation = 6
-    while (user_food > 5):
+    while user_food > 5:
         user_food = int(input("Enter a food rating (1-5): "))
-    while (user_shopping > 5):
+    while user_shopping > 5:
         user_shopping = int(input("Enter a shopping rating (1-5): "))
-    while (user_recreation > 5):
+    while user_recreation > 5:
         user_recreation = int(input("Enter a recreation rating (1-5): "))
 
     # create city object

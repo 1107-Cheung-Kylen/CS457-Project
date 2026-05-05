@@ -26,17 +26,16 @@ import sys
 def main():
 
     print("where have i been? [the app: by kylen cheung]")
-    print("select user (or create one!)")
 
     user_id = select_user()
 
-    user_choice = 4
-    while(user_choice != 3):
+    print("1. View Visited Cities") # allows to view all cities, or view my certain traits (like date, population, etc)
+    print("2. Add City") # add cities to database
+    print("3. Remove City")
+    print("4. Exit Program")
 
-        print("options (plz pick 1)")
-        print("1. view cities") # allows to view all cities, or view my certain traits (like date, population, etc)
-        print("2. add cities") # add cities to database
-        print("3. exit program")
+    user_choice = 5
+    while(user_choice != 4):
         user_choice = int(input("enter a number!: "))
 
         if user_choice == 1:
@@ -46,12 +45,14 @@ def main():
             add_cities(user_id)
 
         if user_choice == 3:
+            remove_cities(user_id)
+            
+        if user_choice == 4:
             sys.exit()
 
-    # need class to store city objects
 
-    # maybe use array of city objects or something like that
-
+# def menu():
+    
 
 if __name__=="__main__":
     main()
