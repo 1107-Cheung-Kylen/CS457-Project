@@ -8,6 +8,8 @@ from datetime import date
 
 from tabulate import tabulate
 
+import sys
+
 # sessionUsers = Session()
 
 Base = declarative_base()
@@ -78,24 +80,97 @@ def select_user():
         # users_name = session.scalars(select(Users.name)).all()
 
         users_tuple = session.execute(select(Users.name, Users.email, Users.id)).all()
-
-        for index, (name, email, id) in enumerate(users_tuple):
-            print(f"{index + 1}: {name}, {email}") # use f-string
-
-        input_choice = int(input("pick a user: "))
-        input_name, input_email, input_id = users_tuple[input_choice - 1] # subtract 1 since array starts at 0
-        # print(input_name)
-
-        # users_id = session.scalars(select(Users.id).where(Users.name == input_name) & (Users.email == input_email)).all()
-        print(f"Selected {input_name}")
-        return input_id
     
-        session.close()
+    users_num = len(users_tuple)
+
+    for index, (name, email, id) in enumerate(users_tuple):
+        print(f"{index + 1}: {name}, {email}") # use f-string
+    
+    print(f"{users_num + 1}: Add User")
+    print(f"{users_num + 2}: Remove User")
+    print(f"{users_num + 3}: Exit Program")
+
+    input_choice = float('inf') # set input_choice to be +infinity
+    # use while loop to make sure valid user is picked
+    while input_choice < 1 or input_choice > users_num + 3:
+        input_choice = int(input("pick a user: "))
+        # if(input_choice == (index + 2)):
+        #     add_user()
+        #     return
+        #     # print("Add USER")
+        # if(input_choice == (index + 3)):
+        #     sys.exit()
+    
+    if input_choice == (users_num + 1):
+        # input_choice = float('-inf')
+        add_user()
+        select_user()
+        # print("Add USER")
+    elif input_choice == (users_num + 2):
+        remove_user()
+        select_user()
+    elif input_choice == (users_num + 3):
+        sys.exit()
+
+    input_name, input_email, input_id = users_tuple[input_choice - 1] # subtract 1 since array starts at 0
+
+    # users_id = session.scalars(select(Users.id).where(Users.name == input_name) & (Users.email == input_email)).all()
+    print(f"Selected {input_name}")
+    
+    return input_id
+
+    # session.close()
+
+def add_user():
+    user_name = input("Enter a name: ")
+    user_email = input("Enter an email: ")
+    new_user = Users(name = user_name, email = user_email)
+
+    with Session() as session:
+        session.add(new_user)
+        session.commit()
+
+def remove_user():
+    with Session() as session:
+        users_tuple = session.execute(select(Users.name, Users.email, Users.id)).all()
+    
+    users_num = len(users_tuple)
+
+    for index, (name, email, id) in enumerate(users_tuple):
+        print(f"{index + 1}: {name}, {email}") # use f-string
+    print(f"{users_num + 1}: Exit")
+
+    # input_choice = int(input("Pick a user to remove: "))
+
+    input_choice = float('inf')
+    while input_choice < 1 or input_choice > users_num + 2:
+        input_choice = int(input("Select a user to remove: "))
+    if input_choice == (users_num + 1):
+        sys.exit()
+
+    name, email, id = users_tuple[input_choice - 1]
+    print(name)
+
+    with Session() as session: 
+        # get row to delete
+        user_delete = session.execute(select(Users).where(Users.id == id)).scalar()
+        if user_delete:
+            session.delete(user_delete)
+            session.commit()
+
+        # need to remove cities from user_cities table too
+        cities_delete = session.execute(select(User_Cities).where(User_Cities.user_id == id)).scalars()
+        
+        if cities_delete:
+            for city_delete in cities_delete:
+                session.delete(city_delete)
+            session.commit()
+
 
 def view_cities(user):
     print("Viewing Cities")
     
-    print(user)
+    # print(user)
     # use SQLalchamey (do NOT load entire database into array)
     with Session() as session:
         # session.add(new_user_city)
@@ -130,3 +205,54 @@ def view_cities(user):
 
     # for city_name, region_name, country_name in cities: # cities is a ROW object
     #     print(city_name, region_name, country_name)
+
+def add_cities(user):
+    print("Adding City")
+
+    user_city = input("Enter a city name (try to be exact): ")
+
+    # use SQLAlchemy to get exact city ID
+    with Session() as session:
+        statement = select(Cities.city_name, Cities.id, Admin_Regions.admin_name, Countries.country_name).join(Admin_Regions, Cities.admin_id == Admin_Regions.admin_id).join(Countries, Cities.country_id == Countries.country_id).where(Cities.city_name == user_city)
+        user_cities = session.execute(statement).all()
+        # user_cities = session.execute(select(Cities).filter_by(Cities.city_name == user_city)).scalars.all()
+        # print(user_cities)
+
+    # need logic to select from array of user cities, also ignore capitalization
+    for index, (city_name, city_id, admin_name, country_name) in enumerate(user_cities):
+        print(f"{index + 1}. {city_name}, {admin_name}, {country_name}")
+    user_filtered_city = int(input("Select a city: "))
+
+    # allow user to choose exact city (city, state, country)
+    city = user_cities[user_filtered_city - 1]
+    city_id = city.id # get city ID
+
+    user_date = input("Enter a date (ex. '2026, 5, 3' for 2026, May 3): ")
+    user_food = 6
+    user_shopping = 6
+    user_recreation = 6
+    while (user_food > 5):
+        user_food = int(input("Enter a food rating (1-5): "))
+    while (user_shopping > 5):
+        user_shopping = int(input("Enter a shopping rating (1-5): "))
+    while (user_recreation > 5):
+        user_recreation = int(input("Enter a recreation rating (1-5): "))
+
+    # create city object
+    user_city = User_Cities(user_id = user, city_id = city_id, date = test_date, rating_food = user_food, rating_shopping = user_shopping, rating_recreation = user_recreation)
+
+    user_city_tabulate = [[city.city_name, city.admin_name, city.country_name, user_date, user_food, user_shopping, user_recreation]]
+    print(user_city_tabulate)
+
+    add_city_headers = [
+        "City", "State/Province/Region", "Country", "Date Visited", "Food", "Recreation", "Shopping",
+    ]
+
+    print(tabulate(user_city_tabulate, headers=add_city_headers, tablefmt="grid"))
+
+    print(f"Add {city.city_name} to visited cities? (Y/N)")
+
+    # use sqlAlchemy to place object into User_City table
+    with Session() as session:
+        session.add(user_city) # automatically adds to User_City table since object is a user_city type
+        session.commit()
