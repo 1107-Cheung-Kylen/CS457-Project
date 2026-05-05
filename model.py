@@ -4,7 +4,7 @@ from sqlalchemy.orm import declarative_base
 
 from database import Session # avoid rewriting connection code from database.py
 
-from datetime import date
+from datetime import date, datetime
 
 from tabulate import tabulate
 
@@ -64,7 +64,7 @@ class Countries(Base):
 # new_user = Users(name = "Alice", email = "aliceg@unr.edu")
 
 test_date = date(2026, 5, 3)
-new_user_city = User_Cities(user_id = 1, city_id = 1392685764, date = test_date, rating_food = 4, rating_shopping = 5, rating_recreation = 2)
+# new_user_city = User_Cities(user_id = 1, city_id = 1392685764, date = test_date, rating_food = 4, rating_shopping = 5, rating_recreation = 2)
 
 # with Session() as session:
 #     session.add(new_user)
@@ -182,13 +182,16 @@ def remove_cities(user):
         ).all()
 
     view_city_headers = [
-        "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited", "Food", "Recreation", "Shopping",
+        "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited (Year, Month, Day)", "Food", "Recreation", "Shopping",
     ]
 
-    print(tabulate(cities, headers=view_city_headers, tablefmt="grid", showindex=range(1, len(cities) + 1)))
+    cities_tabulate = [[row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]] for row in cities]
+    print(tabulate(cities_tabulate, headers=view_city_headers, tablefmt="grid", showindex=range(1, len(cities) + 1)))
 
-    user_choice = int(input("Enter the number of the city to remove: "))
-    city = cities[user_choice - 1]
+    input_choice = float('inf')
+    while input_choice < 1 or input_choice > (len(cities)):
+        input_choice = int(input("Enter the number of the city to remove: "))
+    city = cities[input_choice - 1]
 
     with Session() as session:
         city_delete = session.execute(select(User_Cities).where(User_Cities.id == city.id)).scalar()
@@ -199,7 +202,7 @@ def remove_cities(user):
 
 
 def view_cities(user):
-    print("Viewing Cities")
+    # print("Viewing Cities")
     
     # print(user)
     # use SQLalchamey (do NOT load entire database into array)
@@ -226,7 +229,7 @@ def view_cities(user):
         # print(cities[0].city_id)
 
     view_city_headers = [
-        "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited", "Food", "Recreation", "Shopping",
+        "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited (Year, Month, Day)", "Food", "Recreation", "Shopping",
     ]
 
     print(tabulate(cities, headers=view_city_headers, tablefmt="grid"))
@@ -238,7 +241,7 @@ def view_cities(user):
     #     print(city_name, region_name, country_name)
 
 def add_cities(user):
-    print("Adding City")
+    # print("Adding City")
 
     user_city = input("Enter a city name (try to be exact): ")
 
@@ -252,13 +255,24 @@ def add_cities(user):
     # need logic to select from array of user cities, also ignore capitalization
     for index, (city_name, city_id, admin_name, country_name) in enumerate(user_cities):
         print(f"{index + 1}. {city_name}, {admin_name}, {country_name}")
-    user_filtered_city = int(input("Select a city: "))
+    
+    user_filtered_city = float('inf')
+    while user_filtered_city < 1 or user_filtered_city > (len(user_cities)):
+        user_filtered_city = int(input("Select a city: "))
 
     # allow user to choose exact city (city, state, country)
     city = user_cities[user_filtered_city - 1]
     city_id = city.id # get city ID
 
-    user_date = input("Enter a date (ex. '2026, 5, 3' for 2026, May 3): ")
+    # convert user_date_input (string) into user_date (date object)
+    while True:
+        user_date_input = input("Enter a date (ex. '2026-05-03' for May 3, 2026): ")
+        try:
+            user_date = datetime.strptime(user_date_input, "%Y-%m-%d").date()
+            break
+        except ValueError:
+            print("Invalid format!")
+
     user_food = 6
     user_shopping = 6
     user_recreation = 6
@@ -270,20 +284,21 @@ def add_cities(user):
         user_recreation = int(input("Enter a recreation rating (1-5): "))
 
     # create city object
-    user_city = User_Cities(user_id = user, city_id = city_id, date = test_date, rating_food = user_food, rating_shopping = user_shopping, rating_recreation = user_recreation)
+    user_city = User_Cities(user_id = user, city_id = city_id, date = user_date, rating_food = user_food, rating_shopping = user_shopping, rating_recreation = user_recreation)
 
     user_city_tabulate = [[city.city_name, city.admin_name, city.country_name, user_date, user_food, user_shopping, user_recreation]]
     print(user_city_tabulate)
 
     add_city_headers = [
-        "City", "State/Province/Region", "Country", "Date Visited", "Food", "Recreation", "Shopping",
+        "City", "State/Province/Region", "Country", "Date Visited (Year, Month, Day)", "Food", "Recreation", "Shopping",
     ]
 
     print(tabulate(user_city_tabulate, headers=add_city_headers, tablefmt="grid"))
 
-    print(f"Add {city.city_name} to visited cities? (Y/N)")
-
-    # use sqlAlchemy to place object into User_City table
-    with Session() as session:
-        session.add(user_city) # automatically adds to User_City table since object is a user_city type
-        session.commit()
+    input_choice = input(f"Add {city.city_name} to visited cities? (Y/N): ")
+    if input_choice == "Y":
+        with Session() as session:
+            session.add(user_city) # automatically adds to User_City table since object is a user_city type
+            session.commit()
+    else:
+        return
