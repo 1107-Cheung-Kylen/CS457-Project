@@ -1,5 +1,6 @@
 from sqlalchemy import select
-from sqlalchemy import Column, String, Integer, REAL, SmallInteger, Date
+from sqlalchemy import func # used for lowercase city matching
+from sqlalchemy import Column, String, Integer, REAL, SmallInteger, Date # used in classes for data type
 from sqlalchemy.orm import declarative_base
 
 from database import Session # avoid rewriting connection code from database.py
@@ -173,7 +174,7 @@ def remove_user():
 def remove_cities(user):
     with Session() as session:
         cities = session.execute(
-            select(Cities.city_name, Admin_Regions.admin_name, Countries.country_name, Cities.lat, Cities.lng, Cities.population, User_Cities.date, User_Cities.rating_food, User_Cities.rating_recreation, User_Cities.rating_shopping, User_Cities.id)
+            select(Cities.city_name, Admin_Regions.admin_name, Countries.country_name, Cities.lat, Cities.lng, Cities.population, User_Cities.date, User_Cities.rating_food, User_Cities.rating_shopping, User_Cities.rating_recreation, User_Cities.id)
             .join(User_Cities, Cities.id == User_Cities.city_id)
             .join(Admin_Regions, Cities.admin_id == Admin_Regions.admin_id)
             .join(Countries, Cities.country_id == Countries.country_id)
@@ -182,7 +183,7 @@ def remove_cities(user):
         ).all()
 
     view_city_headers = [
-        "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited (Year, Month, Day)", "Food", "Recreation", "Shopping",
+        "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited (Year, Month, Day)", "Food", "Shopping", "Recreation",
     ]
 
     cities_tabulate = [[row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]] for row in cities]
@@ -213,7 +214,7 @@ def view_cities(user):
         # cities = session.execute(select(Cities, Admin_Regions, Countries).join(User_Cities, Cities.id == User_Cities.city_id).join(Admin_Regions, Cities.admin_id == Admin_Regions.admin_id).join(Countries, Cities.country_id == Countries.country_id).where(User_Cities.user_id == user)).all()
 
         cities = session.execute(
-            select(Cities.city_name, Admin_Regions.admin_name, Countries.country_name, Cities.lat, Cities.lng, Cities.population, User_Cities.date, User_Cities.rating_food, User_Cities.rating_recreation, User_Cities.rating_shopping)
+            select(Cities.city_name, Admin_Regions.admin_name, Countries.country_name, Cities.lat, Cities.lng, Cities.population, User_Cities.date, User_Cities.rating_food, User_Cities.rating_shopping, User_Cities.rating_recreation)
             .join(User_Cities, Cities.id == User_Cities.city_id)
             .join(Admin_Regions, Cities.admin_id == Admin_Regions.admin_id)
             .join(Countries, Cities.country_id == Countries.country_id)
@@ -229,7 +230,7 @@ def view_cities(user):
         # print(cities[0].city_id)
 
     view_city_headers = [
-        "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited (Year, Month, Day)", "Food", "Recreation", "Shopping",
+        "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited (Year, Month, Day)", "Food", "Shopping", "Recreation",
     ]
 
     print(tabulate(cities, headers=view_city_headers, tablefmt="grid"))
@@ -243,14 +244,20 @@ def view_cities(user):
 def add_cities(user):
     # print("Adding City")
 
-    user_city = input("Enter a city name (try to be exact): ")
+    while True:
+        user_city = input("Enter a city name (try to be exact): ")
 
-    # use SQLAlchemy to get exact city ID
-    with Session() as session:
-        statement = select(Cities.city_name, Cities.id, Admin_Regions.admin_name, Countries.country_name).join(Admin_Regions, Cities.admin_id == Admin_Regions.admin_id).join(Countries, Cities.country_id == Countries.country_id).where(Cities.city_name == user_city)
-        user_cities = session.execute(statement).all()
-        # user_cities = session.execute(select(Cities).filter_by(Cities.city_name == user_city)).scalars.all()
-        # print(user_cities)
+        # use SQLAlchemy to get exact city ID
+        with Session() as session:
+            statement = select(Cities.city_name, Cities.id, Admin_Regions.admin_name, Countries.country_name).join(Admin_Regions, Cities.admin_id == Admin_Regions.admin_id).join(Countries, Cities.country_id == Countries.country_id).where(func.lower(Cities.city_name) == func.lower(user_city))
+            user_cities = session.execute(statement).all() # user_cities returns a list along with boolean (True if empty, false if not empty)
+            # user_cities = session.execute(select(Cities).filter_by(Cities.city_name == user_city)).scalars.all()
+            # print(user_cities)
+        
+        if user_cities: # if user_cities returned a true, break out of while loop
+            break
+        else:
+            print("No matching cities found. Try again")
 
     # need logic to select from array of user cities, also ignore capitalization
     for index, (city_name, city_id, admin_name, country_name) in enumerate(user_cities):
@@ -287,10 +294,10 @@ def add_cities(user):
     user_city = User_Cities(user_id = user, city_id = city_id, date = user_date, rating_food = user_food, rating_shopping = user_shopping, rating_recreation = user_recreation)
 
     user_city_tabulate = [[city.city_name, city.admin_name, city.country_name, user_date, user_food, user_shopping, user_recreation]]
-    print(user_city_tabulate)
+    # print(user_city_tabulate)
 
     add_city_headers = [
-        "City", "State/Province/Region", "Country", "Date Visited (Year, Month, Day)", "Food", "Recreation", "Shopping",
+        "City", "State/Province/Region", "Country", "Date Visited (Year, Month, Day)", "Food", "Shopping", "Recreation",
     ]
 
     print(tabulate(user_city_tabulate, headers=add_city_headers, tablefmt="grid"))
