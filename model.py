@@ -11,8 +11,6 @@ from tabulate import tabulate
 
 import sys
 
-# sessionUsers = Session()
-
 Base = declarative_base()
 
 class Cities(Base):
@@ -62,26 +60,11 @@ class Countries(Base):
     country_name = Column(String)
     country_id = Column(SmallInteger, primary_key=True)
 
-# new_user = Users(name = "Alice", email = "aliceg@unr.edu")
-
-test_date = date(2026, 5, 3)
-# new_user_city = User_Cities(user_id = 1, city_id = 1392685764, date = test_date, rating_food = 4, rating_shopping = 5, rating_recreation = 2)
-
-# with Session() as session:
-#     session.add(new_user)
-#     session.commit()
-
 def select_user():
     print("Select a user (or create one!)")
 
     # access database and list all
     with Session() as session:
-        # statement = select(Users.name)
-        # users_name = session.execute(statement).scalars().all() # returns a list
-        # print(users_name)
-
-        # users_name = session.scalars(select(Users.name)).all()
-
         users_tuple = session.execute(select(Users.name, Users.email, Users.id)).all()
     
     users_num = len(users_tuple)
@@ -97,12 +80,6 @@ def select_user():
     # use while loop to make sure valid user is picked
     while input_choice < 1 or input_choice > users_num + 3:
         input_choice = int(input("Pick an option: "))
-        # if(input_choice == (index + 2)):
-        #     add_user()
-        #     return
-        #     # print("Add USER")
-        # if(input_choice == (index + 3)):
-        #     sys.exit()
     
     if input_choice == (users_num + 1):
         # input_choice = float('-inf')
@@ -222,24 +199,11 @@ def view_cities(user):
             # maybe need another where clause for admin region?
         ).all()
 
-        # cities_id = []
-        # for city_id in cities_id:
-        #     cities_id.append(city_id)
-        
-        
-        # print(cities[0].city_id)
-
     view_city_headers = [
         "City", "State/Province/Region", "Country", "Lat", "Lng", "Population", "Date Visited (Year, Month, Day)", "Food", "Shopping", "Recreation",
     ]
 
     print(tabulate(cities, headers=view_city_headers, tablefmt="grid"))
-
-    # for city in cities:
-    #     print(f"{city.city_name}, {city.lat}, {city.lng}, {city.admin_name}, {city.country_name}")
-
-    # for city_name, region_name, country_name in cities: # cities is a ROW object
-    #     print(city_name, region_name, country_name)
 
 def add_cities(user):
     # print("Adding City")
@@ -251,8 +215,6 @@ def add_cities(user):
         with Session() as session:
             statement = select(Cities.city_name, Cities.id, Admin_Regions.admin_name, Countries.country_name).join(Admin_Regions, Cities.admin_id == Admin_Regions.admin_id).join(Countries, Cities.country_id == Countries.country_id).where(func.lower(Cities.city_name) == func.lower(user_city))
             user_cities = session.execute(statement).all() # user_cities returns a list along with boolean (True if empty, false if not empty)
-            # user_cities = session.execute(select(Cities).filter_by(Cities.city_name == user_city)).scalars.all()
-            # print(user_cities)
         
         if user_cities: # if user_cities returned a true, break out of while loop
             break
@@ -294,7 +256,6 @@ def add_cities(user):
     user_city = User_Cities(user_id = user, city_id = city_id, date = user_date, rating_food = user_food, rating_shopping = user_shopping, rating_recreation = user_recreation)
 
     user_city_tabulate = [[city.city_name, city.admin_name, city.country_name, user_date, user_food, user_shopping, user_recreation]]
-    # print(user_city_tabulate)
 
     add_city_headers = [
         "City", "State/Province/Region", "Country", "Date Visited (Year, Month, Day)", "Food", "Shopping", "Recreation",
